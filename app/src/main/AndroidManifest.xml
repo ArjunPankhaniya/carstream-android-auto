@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.thekirankumar.youtubeauto">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <permission android:name="android.permission.RECORD_AUDIO" />
-    <permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <permission android:name="android.permission.RECORD_AUDIO"
+        tools:ignore="ReservedSystemPermission" />
+    <permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        tools:ignore="ReservedSystemPermission" />
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
-        android:name=".application.MyApplication"
+        android:name="com.thekirankumar.youtubeauto.application.MyApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/Base.Theme.AppCompat">
+
         <service
             android:name="com.thekirankumar.youtubeauto.service.CarService"
             android:label="@string/car_service_name"
@@ -29,15 +31,22 @@
                 <category android:name="com.google.android.gms.car.category.CATEGORY_PROJECTION_OEM" />
             </intent-filter>
         </service>
-        <service android:enabled="true" android:exported="true" android:name=".service.MyMediaBrowserService"
-            android:label="@string/app_name_player" >
+
+        <service
+            android:enabled="true"
+            android:exported="true"
+            android:name="com.thekirankumar.youtubeauto.service.MyMediaBrowserService"
+            android:label="@string/app_name_player">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
                 <action android:name="android.media.AUDIO_BECOMING_NOISY" />
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
-        <receiver android:name="android.support.v4.media.session.MediaButtonReceiver" >
+
+        <!-- ✅ FIXED -->
+        <receiver android:name="android.support.v4.media.session.MediaButtonReceiver"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
@@ -47,9 +56,11 @@
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
 
+        <!-- ✅ FIXED -->
         <activity
             android:name="com.thekirankumar.youtubeauto.activity.MainPhoneActivity"
-            android:configChanges="orientation|screenSize">
+            android:configChanges="orientation|screenSize"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -60,8 +71,9 @@
             android:name="com.thekirankumar.youtubeauto.activity.SettingsPhoneActivity"
             android:label="@string/settings"
             android:configChanges="orientation|screenSize"
-            android:parentActivityName=".activity.MainPhoneActivity">
-        </activity>
+            android:parentActivityName="com.thekirankumar.youtubeauto.activity.MainPhoneActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

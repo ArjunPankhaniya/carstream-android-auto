@@ -3,11 +3,12 @@ package com.thekirankumar.youtubeauto.activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
-import android.view.KeyEvent;
 import android.view.Window;
+
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
@@ -18,31 +19,33 @@ import com.thekirankumar.youtubeauto.fragments.WebViewCarFragment;
 import java.util.HashSet;
 
 public class MainCarActivity extends CarActivity {
+
     private static final String FRAGMENT_MAIN = "main";
     private static final String CURRENT_FRAGMENT_KEY = "app_current_fragment";
+
     private String mCurrentFragmentTag;
-    private final FragmentManager.FragmentLifecycleCallbacks mFragmentLifecycleCallbacks
-            = new FragmentManager.FragmentLifecycleCallbacks() {
-        @Override
-        public void onFragmentStarted(FragmentManager fm, Fragment f) {
-            updateStatusBarTitle();
-        }
-    };
-    private HashSet<ActivityCallbacks> activityCallbacks = new HashSet<>(0);
+
+    private final FragmentManager.FragmentLifecycleCallbacks mFragmentLifecycleCallbacks =
+            new FragmentManager.FragmentLifecycleCallbacks() {
+                @Override
+                public void onFragmentStarted(FragmentManager fm, Fragment f) {
+                    updateStatusBarTitle();
+                }
+            };
+
+    private final HashSet<ActivityCallbacks> activityCallbacks = new HashSet<>();
 
     @Override
-    public void onWindowFocusChanged(boolean hasFocus, boolean b1) {
-        super.onWindowFocusChanged(hasFocus, b1);
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
         for (ActivityCallbacks next : activityCallbacks) {
             next.onWindowFocusChanged(hasFocus);
         }
     }
 
-
-
     @Override
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_car_main);
 
         CarUiController carUiController = getCarUiController();
@@ -58,12 +61,15 @@ public class MainCarActivity extends CarActivity {
                 .commitNow();
 
         String initialFragmentTag = FRAGMENT_MAIN;
-        if (bundle != null && bundle.containsKey(CURRENT_FRAGMENT_KEY)) {
-            initialFragmentTag = bundle.getString(CURRENT_FRAGMENT_KEY);
+        if (savedInstanceState != null && savedInstanceState.containsKey(CURRENT_FRAGMENT_KEY)) {
+            initialFragmentTag = savedInstanceState.getString(CURRENT_FRAGMENT_KEY);
         }
+
         switchToFragment(initialFragmentTag);
-        getSupportFragmentManager().registerFragmentLifecycleCallbacks(mFragmentLifecycleCallbacks,
-                false);
+
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(
+                mFragmentLifecycleCallbacks, false
+        );
     }
 
     @Override
@@ -72,50 +78,61 @@ public class MainCarActivity extends CarActivity {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle bundle) {
-        bundle.putString(CURRENT_FRAGMENT_KEY, mCurrentFragmentTag);
-        super.onSaveInstanceState(bundle);
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putString(CURRENT_FRAGMENT_KEY, mCurrentFragmentTag);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
-    public void onStart() {
+    protected void onStart() {
         super.onStart();
-        switchToFragment(mCurrentFragmentTag);
+        if (mCurrentFragmentTag != null) {
+            switchToFragment(mCurrentFragmentTag);
+        }
     }
 
     private void switchToFragment(String tag) {
-        if (tag.equals(mCurrentFragmentTag)) {
+        if (tag == null || tag.equals(mCurrentFragmentTag)) {
             return;
         }
+
         FragmentManager manager = getSupportFragmentManager();
-        Fragment currentFragment = mCurrentFragmentTag == null ? null : manager.findFragmentByTag(mCurrentFragmentTag);
+
+        Fragment currentFragment = mCurrentFragmentTag == null
+                ? null
+                : manager.findFragmentByTag(mCurrentFragmentTag);
+
         Fragment newFragment = manager.findFragmentByTag(tag);
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+        if (newFragment == null) return;
+
+        FragmentTransaction transaction = manager.beginTransaction();
+
         if (currentFragment != null) {
             transaction.detach(currentFragment);
         }
+
         transaction.attach(newFragment);
         transaction.commit();
+
         mCurrentFragmentTag = tag;
     }
 
     private void updateStatusBarTitle() {
-        CarFragment fragment = (CarFragment) getSupportFragmentManager().findFragmentByTag(mCurrentFragmentTag);
-        getCarUiController().getStatusBarController().setTitle(fragment.getTitle());
-    }
-
-    public Window getWindow() {
-        return super.c();
+        Fragment fragment = getSupportFragmentManager().findFragmentByTag(mCurrentFragmentTag);
+        if (fragment instanceof CarFragment) {
+            CarFragment carFragment = (CarFragment) fragment;
+            getCarUiController().getStatusBarController().setTitle(carFragment.getTitle());
+        }
     }
 
     @Override
-    public void onConfigurationChanged(Configuration configuration) {
-        super.onConfigurationChanged(configuration);
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
         for (ActivityCallbacks next : activityCallbacks) {
             next.onConfigChanged();
         }
     }
-
 
     public void addActivityCallback(ActivityCallbacks listener) {
         this.activityCallbacks.add(listener);
